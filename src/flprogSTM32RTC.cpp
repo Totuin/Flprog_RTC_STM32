@@ -13,10 +13,10 @@ void FLProgSystemRTC::pool()
   {
     readTime();
   }
-  else
-  {
-    calculationTime();
-  }
+  // else
+  // {
+  //   calculationTime();
+  // }
 }
 
 void FLProgSystemRTC::privateSetTime()
@@ -27,12 +27,11 @@ void FLProgSystemRTC::privateSetTime()
 
 void FLProgSystemRTC::readTime()
 {
-
   uint8_t year, month, data, day, hour, minute, second;
   uint32_t subSec;
   hourAM_PM_t period;
   RTC_GetDate(&year, &month, &data, &day);
   RTC_GetTime(&hour, &minute, &second, &subSec, &period);
-  now.setTime(second, minute, hour, data, month, (year + 2000));
+  now.setTime(second, minute, hour, data, month, year);
   _startReadTime = millis();
 }

@@ -24,5 +24,5 @@ protected:
     void readTime();
     bool _isInit = false;
     uint32_t _startReadTime = 0;
-    uint32_t _reqestPeriod = 2000;
+    uint32_t _reqestPeriod = 500;
 };
