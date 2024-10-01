@@ -2,7 +2,7 @@
 
 FLProgSystemRTC::FLProgSystemRTC(int16_t gmt)
 {
-  setGmt(gmt);
+ // setGmt(gmt);
   RTC_init(HOUR_FORMAT_24, LSE_CLOCK, false);
   readTime();
 }
