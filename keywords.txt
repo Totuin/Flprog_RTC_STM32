@@ -1,0 +1,40 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+#######################################
+# # Datatypes (KEYWORD1)
+#######################################
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+FLPROG_RTC_Alarm_IRQHandler	LITERAL1
+HAL_RTC_MODULE_ENABLED	LITERAL1
+HAL_RTC_MODULE_ONLY	LITERAL1
+HSE_RTC_MAX	LITERAL1
+IS_RTC_WEEKDAY	LITERAL1
+ONESECOND_IRQn	LITERAL1
+PREDIVA_MAX	LITERAL1
+PREDIVS_MAX	LITERAL1
+RTC_ALARM_B	LITERAL1
+RTC_Alarm_IRQn	LITERAL1
+RTC_BKP_DATE	LITERAL1
+RTC_CR_WUTE	LITERAL1
+RTC_IRQ_PRIO	LITERAL1
+RTC_IRQ_SUBPRIO	LITERAL1
+RTC_PRER_PREDIV_S	LITERAL1
+STM32C0xx	LITERAL1
+STM32F0xx	LITERAL1
+STM32F1xx	LITERAL1
+STM32G0xx	LITERAL1
+STM32L0xx	LITERAL1
+STM32L5xx	LITERAL1
+STM32U5xx	LITERAL1
+__RTC_H	LITERAL1
+__cplusplus	LITERAL1

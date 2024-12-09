@@ -219,17 +219,10 @@ void FLPROG_RTC_getPrediv(int8_t *asynch, int16_t *synch)
   bool FLPROG_RTC_init(flprog_hourFormat_t format, sourceClock_t source, bool reset)
   {
     bool reinit = false;
-    flprog_hourAM_PM_t period = HOUR_AM, alarmPeriod = HOUR_AM;
-    uint32_t subSeconds = 0, alarmSubseconds = 0;
+    flprog_hourAM_PM_t period = HOUR_AM;
+    uint32_t subSeconds = 0;
     uint8_t seconds = 0, minutes = 0, hours = 0, weekDay = 0, days = 0, month = 0, years = 0;
-    uint8_t alarmMask = 0, alarmDay = 0, alarmHours = 0, alarmMinutes = 0, alarmSeconds = 0;
-    bool isAlarmASet = false;
-#ifdef RTC_ALARM_B
-    flprog_hourAM_PM_t alarmBPeriod = HOUR_AM;
-    uint8_t alarmBMask = 0, alarmBDay = 0, alarmBHours = 0, alarmBMinutes = 0, alarmBSeconds = 0;
-    uint32_t alarmBSubseconds = 0;
-    bool isAlarmBSet = false;
-#endif
+
 #if defined(STM32F1xx)
     uint32_t asynch;
 #else
@@ -250,10 +243,6 @@ void FLPROG_RTC_getPrediv(int8_t *asynch, int16_t *synch)
 #endif
     __HAL_RCC_RTC_ENABLE();
 
-    isAlarmASet = FLPROG_RTC_IsAlarmSet(ALARM_A);
-#ifdef RTC_ALARM_B
-    isAlarmBSet = FLPROG_RTC_IsAlarmSet(ALARM_B);
-#endif
 #if defined(STM32F1xx)
     uint32_t BackupDate;
     BackupDate = getBackupRegister(RTC_BKP_DATE) << 16;
@@ -322,16 +311,6 @@ void FLPROG_RTC_getPrediv(int8_t *asynch, int16_t *synch)
 #else
       FLPROG_RTC_getPrediv(&asynch, &sync);
 #endif
-        if (isAlarmASet)
-        {
-          FLPROG_RTC_GetAlarm(ALARM_A, &alarmDay, &alarmHours, &alarmMinutes, &alarmSeconds, &alarmSubseconds, &alarmPeriod, &alarmMask);
-        }
-#ifdef RTC_ALARM_B
-        if (isAlarmBSet)
-        {
-          FLPROG_RTC_GetAlarm(ALARM_B, &alarmBDay, &alarmBHours, &alarmBMinutes, &alarmBSeconds, &alarmBSubseconds, &alarmBPeriod, &alarmBMask);
-        }
-#endif
         FLPROG_RTC_initClock(source);
         FLPROG_RTC_SetTime(hours, minutes, seconds, subSeconds, period);
         FLPROG_RTC_SetDate(years, month, days, weekDay);
@@ -339,16 +318,6 @@ void FLPROG_RTC_getPrediv(int8_t *asynch, int16_t *synch)
         FLPROG_RTC_setPrediv(asynch);
 #else
       FLPROG_RTC_setPrediv(asynch, sync);
-#endif
-        if (isAlarmASet)
-        {
-          FLPROG_RTC_StartAlarm(ALARM_A, alarmDay, alarmHours, alarmMinutes, alarmSeconds, alarmSubseconds, alarmPeriod, alarmMask);
-        }
-#ifdef RTC_ALARM_B
-        if (isAlarmBSet)
-        {
-          FLPROG_RTC_StartAlarm(ALARM_B, alarmBDay, alarmBHours, alarmBMinutes, alarmBSeconds, alarmBSubseconds, alarmBPeriod, alarmBMask);
-        }
 #endif
       }
       else
@@ -477,192 +446,6 @@ void FLPROG_RTC_getPrediv(int8_t *asynch, int16_t *synch)
       *wday = RTC_DateStruct.WeekDay;
     }
   }
-
-  void FLPROG_RTC_StartAlarm(flprog_alarm_t name, uint8_t day, uint8_t hours, uint8_t minutes, uint8_t seconds, uint32_t subSeconds, flprog_hourAM_PM_t period, uint8_t mask)
-  {
-    RTC_AlarmTypeDef RTC_AlarmStructure;
-
-    /* Ignore time AM PM configuration if in 24 hours format */
-    if (flprogInitFormat == HOUR_FORMAT_24)
-    {
-      period = HOUR_AM;
-    }
-    if ((((flprogInitFormat == HOUR_FORMAT_24) && IS_RTC_HOUR24(hours)) || IS_RTC_HOUR12(hours)) && IS_RTC_DATE(day) && IS_RTC_MINUTES(minutes) && IS_RTC_SECONDS(seconds))
-    {
-      RTC_AlarmStructure.Alarm = name;
-      RTC_AlarmStructure.AlarmTime.Seconds = seconds;
-      RTC_AlarmStructure.AlarmTime.Minutes = minutes;
-      RTC_AlarmStructure.AlarmTime.Hours = hours;
-#if !defined(STM32F1xx)
-#if defined(RTC_SSR_SS)
-      if (subSeconds < 1000)
-      {
-#ifdef RTC_ALARM_B
-        if (name == ALARM_B)
-        {
-          RTC_AlarmStructure.AlarmSubSecondMask = flprogpPredivSync_bits << RTC_ALRMBSSR_MASKSS_Pos;
-        }
-        else
-#endif
-        {
-          RTC_AlarmStructure.AlarmSubSecondMask = flprogpPredivSync_bits << RTC_ALRMASSR_MASKSS_Pos;
-        }
-        RTC_AlarmStructure.AlarmTime.SubSeconds = flprogPredivSync - (subSeconds * (flprogPredivSync + 1)) / 1000;
-      }
-      else
-      {
-        RTC_AlarmStructure.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-      }
-#else
-      UNUSED(subSeconds);
-#endif
-      if (period == HOUR_PM)
-      {
-        RTC_AlarmStructure.AlarmTime.TimeFormat = RTC_HOURFORMAT12_PM;
-      }
-      else
-      {
-        RTC_AlarmStructure.AlarmTime.TimeFormat = RTC_HOURFORMAT12_AM;
-      }
-      RTC_AlarmStructure.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-      RTC_AlarmStructure.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-      RTC_AlarmStructure.AlarmDateWeekDay = day;
-      RTC_AlarmStructure.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-      if (mask == OFF_MSK)
-      {
-        RTC_AlarmStructure.AlarmMask = RTC_ALARMMASK_ALL;
-      }
-      else
-      {
-        RTC_AlarmStructure.AlarmMask = RTC_ALARMMASK_NONE;
-        if (!(mask & SS_MSK))
-        {
-          RTC_AlarmStructure.AlarmMask |= RTC_ALARMMASK_SECONDS;
-        }
-        if (!(mask & MM_MSK))
-        {
-          RTC_AlarmStructure.AlarmMask |= RTC_ALARMMASK_MINUTES;
-        }
-        if (!(mask & HH_MSK))
-        {
-          RTC_AlarmStructure.AlarmMask |= RTC_ALARMMASK_HOURS;
-        }
-        if (!(mask & D_MSK))
-        {
-          RTC_AlarmStructure.AlarmMask |= RTC_ALARMMASK_DATEWEEKDAY;
-        }
-      }
-#else
-    UNUSED(subSeconds);
-    UNUSED(period);
-    UNUSED(day);
-    UNUSED(mask);
-#endif
-      HAL_RTC_SetAlarm_IT(&FLPROG_RtcHandle, &RTC_AlarmStructure, RTC_FORMAT_BIN);
-      HAL_NVIC_SetPriority(RTC_Alarm_IRQn, RTC_IRQ_PRIO, RTC_IRQ_SUBPRIO);
-      HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
-    }
-  }
-  bool FLPROG_RTC_IsAlarmSet(flprog_alarm_t name)
-  {
-    bool status = false;
-#if defined(STM32F1xx)
-    UNUSED(name);
-    status = LL_RTC_IsEnabledIT_ALR(FLPROG_RtcHandle.Instance);
-#else
-#ifdef RTC_ALARM_B
-  if (name == ALARM_B)
-  {
-    status = LL_RTC_IsEnabledIT_ALRB(FLPROG_RtcHandle.Instance);
-  }
-  else
-#else
-  UNUSED(name);
-#endif
-  {
-    status = LL_RTC_IsEnabledIT_ALRA(FLPROG_RtcHandle.Instance);
-  }
-#endif
-    return status;
-  }
-
-  void FLPROG_RTC_GetAlarm(flprog_alarm_t name, uint8_t *day, uint8_t *hours, uint8_t *minutes, uint8_t *seconds, uint32_t *subSeconds, flprog_hourAM_PM_t *period, uint8_t *mask)
-  {
-    RTC_AlarmTypeDef RTC_AlarmStructure;
-
-    if ((hours != NULL) && (minutes != NULL) && (seconds != NULL))
-    {
-      HAL_RTC_GetAlarm(&FLPROG_RtcHandle, &RTC_AlarmStructure, name, RTC_FORMAT_BIN);
-
-      *seconds = RTC_AlarmStructure.AlarmTime.Seconds;
-      *minutes = RTC_AlarmStructure.AlarmTime.Minutes;
-      *hours = RTC_AlarmStructure.AlarmTime.Hours;
-
-#if !defined(STM32F1xx)
-      if (day != NULL)
-      {
-        *day = RTC_AlarmStructure.AlarmDateWeekDay;
-      }
-      if (period != NULL)
-      {
-        if (RTC_AlarmStructure.AlarmTime.TimeFormat == RTC_HOURFORMAT12_PM)
-        {
-          *period = HOUR_PM;
-        }
-        else
-        {
-          *period = HOUR_AM;
-        }
-      }
-#if defined(RTC_SSR_SS)
-      if (subSeconds != NULL)
-      {
-        *subSeconds = ((flprogPredivSync - RTC_AlarmStructure.AlarmTime.SubSeconds) * 1000) / (flprogPredivSync + 1);
-      }
-#else
-      UNUSED(subSeconds);
-#endif
-      if (mask != NULL)
-      {
-        *mask = OFF_MSK;
-        if (!(RTC_AlarmStructure.AlarmMask & RTC_ALARMMASK_SECONDS))
-        {
-          *mask |= SS_MSK;
-        }
-        if (!(RTC_AlarmStructure.AlarmMask & RTC_ALARMMASK_MINUTES))
-        {
-          *mask |= MM_MSK;
-        }
-        if (!(RTC_AlarmStructure.AlarmMask & RTC_ALARMMASK_HOURS))
-        {
-          *mask |= HH_MSK;
-        }
-        if (!(RTC_AlarmStructure.AlarmMask & RTC_ALARMMASK_DATEWEEKDAY))
-        {
-          *mask |= D_MSK;
-        }
-      }
-#else
-    UNUSED(day);
-    UNUSED(period);
-    UNUSED(subSeconds);
-    UNUSED(mask);
-#endif
-    }
-  }
-
-  void FLPROG_RTC_Alarm_IRQHandler(void)
-  {
-    HAL_RTC_AlarmIRQHandler(&FLPROG_RtcHandle);
-
-#if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx) || \
-    defined(STM32F091xC) || defined(STM32F098xx) || defined(STM32F070xB) || \
-    defined(STM32F030xC) || defined(STM32G0xx) || defined(STM32L0xx) ||     \
-    defined(STM32L5xx) || defined(STM32U5xx)
-    HAL_RTCEx_WakeUpTimerIRQHandler(&FLPROG_RtcHandle);
-#endif
-  }
-
 #if defined(STM32F1xx)
   void FLPROG_RTC_StoreDate(void)
   {
@@ -677,6 +460,4 @@ void FLPROG_RTC_getPrediv(int8_t *asynch, int16_t *synch)
 }
 #endif
 
-#endif 
-
-
+#endif

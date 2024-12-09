@@ -116,10 +116,6 @@ void FLPROG_RTC_setPrediv(int8_t asynch, int16_t synch);
   void FLPROG_RTC_SetDate(uint8_t year, uint8_t month, uint8_t day, uint8_t wday);
   void FLPROG_RTC_GetDate(uint8_t *year, uint8_t *month, uint8_t *day, uint8_t *wday);
 
-  void FLPROG_RTC_StartAlarm(flprog_alarm_t name, uint8_t day, uint8_t hours, uint8_t minutes, uint8_t seconds, uint32_t subSeconds, flprog_hourAM_PM_t period, uint8_t mask);
-  bool FLPROG_RTC_IsAlarmSet(flprog_alarm_t name);
-  void FLPROG_RTC_GetAlarm(flprog_alarm_t name, uint8_t *day, uint8_t *hours, uint8_t *minutes, uint8_t *seconds, uint32_t *subSeconds, flprog_hourAM_PM_t *period, uint8_t *mask);
-
 #if defined(STM32F1xx)
   void FLPROG_RTC_StoreDate(void);
 #endif
